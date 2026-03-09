@@ -11,7 +11,6 @@ export default function Sidebar() {
     { name: "Historial de minutas", path: "/history", icon: History },
     { name: "Seguimiento de acuerdos", path: "/agreements", icon: CheckSquare },
     { name: "Clientes", path: "/clients", icon: Users },
-    { name: "Diseños", path: "/designs", icon: File },
     { name: "Configuración", path: "/settings", icon: Settings },
   ];
 

@@ -16,6 +16,7 @@ import {
   TableLayoutType,
 } from "docx";
 import { storageService } from "./storage";
+import { formatDateForDisplay } from "./parser";
 
 export async function generateWordDocument(templateData: ArrayBuffer, data: any) {
   // Fetch logo from storage
@@ -106,7 +107,7 @@ export async function generateWordDocument(templateData: ArrayBuffer, data: any)
       alignment: AlignmentType.RIGHT,
       children: [
         new TextRun({ text: "FECHA: ", bold: true, color: BLUE_PRIMARY, size: FONT_SIZE, font: FONT_FAMILY }),
-        new TextRun({ text: data.date || "", size: FONT_SIZE, font: FONT_FAMILY }),
+        new TextRun({ text: formatDateForDisplay(data.date) || "", size: FONT_SIZE, font: FONT_FAMILY }),
       ],
     }),
     new Paragraph({
@@ -137,7 +138,7 @@ export async function generateWordDocument(templateData: ArrayBuffer, data: any)
     new Paragraph({
       children: [
         new TextRun({ text: "REUNIÓN / NOMBRE DEL PROYECTO: ", bold: true, color: BLUE_PRIMARY, size: FONT_SIZE, font: FONT_FAMILY }),
-        new TextRun({ text: data.client || "", size: FONT_SIZE, font: FONT_FAMILY }),
+        new TextRun({ text: data.meeting_name || data.client || "", size: FONT_SIZE, font: FONT_FAMILY }),
       ],
     }),
     new Paragraph({ text: "" }),

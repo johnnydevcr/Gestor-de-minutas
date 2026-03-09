@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Play, Download, RefreshCw, X, Plus, ClipboardList } from "lucide-react";
-import { parseMinuteText } from "../services/parser";
+import { FileText, Play, Download, RefreshCw, X, Plus, ClipboardList, Eye, FileDown, Copy, Info } from "lucide-react";
+import { parseMinuteText, validateMinuteText, formatDateForDisplay } from "../services/parser";
 import { generateWordDocument } from "../services/word";
+import { generatePDF } from "../services/pdf";
 import { storageService } from "../services/storage";
 
 export default function NewMinute() {
@@ -17,13 +18,76 @@ export default function NewMinute() {
   });
 
   const [aiData, setAiData] = useState<any>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [showPromptGuide, setShowPromptGuide] = useState(false);
   const [newAttendee, setNewAttendee] = useState("");
   const [newAbsentee, setNewAbsentee] = useState("");
+
+  const COPILOT_PROMPT = `Actúa como un asistente experto en redacción de minutas. A partir de la siguiente transcripción o notas de reunión, genera una minuta estructurada siguiendo ESTRICTAMENTE este formato:
+
+Nombre de la reunión: [Nombre descriptivo]
+Fecha: [DD/MM/AAAA]
+Hora inicio: [HH:MM]
+Hora fin: [HH:MM]
+Lugar: [Ubicación o Enlace]
+Responsable: [Nombre de quien redacta]
+Asistentes: [Nombre 1, Nombre 2, ...]
+Ausentes: [Nombre 1, Nombre 2, ...]
+Objetivo: [Breve descripción del propósito]
+
+Temas Tratados:
+Tema: [Título del tema]
+Detalle: [Explicación amplia y detallada de todo lo discutido en este punto. No escatimes en detalles relevantes.]
+Puntos Importantes: [Opcional: Solo si hay puntos específicos que resumir en frases cortas. Si no hay, omite esta línea.]
+Decisiones: [Opcional: Solo si se llegó a acuerdos o decisiones específicas en este tema. Si no hay, omite esta línea.]
+
+Tema: [Siguiente tema...]
+...
+
+Acuerdos:
+[Acción 1] - [Responsable] - [Fecha límite]
+[Acción 2] - [Responsable] - [Fecha límite]
+
+Temas Pendientes:
+- [Tema A]
+- [Tema B]
+
+Notas adicionales:
+- Mantén un tono profesional.
+- Si falta algún dato, usa 'Por definir' o deja el espacio sugerido.
+- No añadas introducciones ni conclusiones fuera del formato.`;
+
+  const handleCopyPrompt = () => {
+    navigator.clipboard.writeText(COPILOT_PROMPT);
+    alert("¡Prompt copiado al portapapeles!");
+  };
 
   useEffect(() => {
     const data = storageService.getClients();
     setClients(data);
   }, []);
+
+  const handlePasteFromCopilot = async () => {
+    try {
+      // Check if the API is available
+      if (!navigator.clipboard || !navigator.clipboard.readText) {
+        throw new Error("Clipboard API not supported");
+      }
+      
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        setFormData({ ...formData, transcript: text });
+      } else {
+        alert("El portapapeles está vacío.");
+      }
+    } catch (err) {
+      console.error("Error al acceder al portapapeles:", err);
+      alert(
+        "El navegador bloqueó el acceso al portapapeles por seguridad en esta vista previa.\n\n" +
+        "Por favor, usa el atajo de teclado Ctrl+V (o Cmd+V) directamente en el cuadro de texto para pegar la información."
+      );
+    }
+  };
 
   const handleAnalyze = async () => {
     if (!formData.transcript.trim()) {
@@ -34,6 +98,13 @@ export default function NewMinute() {
       alert("Por favor selecciona un cliente.");
       return;
     }
+
+    const validation = validateMinuteText(formData.transcript);
+    if (!validation.valid) {
+      alert(`Formato inválido: ${validation.error}`);
+      return;
+    }
+
     setLoading(true);
     try {
       // Use manual parser instead of AI
@@ -43,6 +114,7 @@ export default function NewMinute() {
       setAiData({
         ...result,
         client: selectedClient ? selectedClient.name : (result.client || "Sin nombre"),
+        meeting_name: result.meeting_name || (selectedClient ? selectedClient.name : ""),
         client_id: formData.clientId,
         minute_number: selectedClient ? `MN-${selectedClient.code}-0000` : (result.minute_number || "MN-000")
       });
@@ -50,6 +122,19 @@ export default function NewMinute() {
     } catch (error) {
       console.error(error);
       alert("Error al procesar el texto.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!aiData) return;
+    setLoading(true);
+    try {
+      await generatePDF(aiData);
+    } catch (error) {
+      console.error(error);
+      alert("Error al generar el PDF.");
     } finally {
       setLoading(false);
     }
@@ -131,9 +216,18 @@ export default function NewMinute() {
 
       {step === 1 && (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 space-y-6">
-          <h2 className="text-xl font-semibold text-slate-800 border-b border-slate-100 pb-4">
-            Información de la Minuta
-          </h2>
+          <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+            <h2 className="text-xl font-semibold text-slate-800">
+              Información de la Minuta
+            </h2>
+            <button
+              onClick={() => setShowPromptGuide(true)}
+              className="text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center gap-1.5 transition-colors"
+            >
+              <Info size={16} />
+              ¿Cómo generar este texto? (Prompt para Copilot)
+            </button>
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -156,10 +250,28 @@ export default function NewMinute() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
-              <ClipboardList size={18} />
-              Pegar Información de la Minuta
-            </label>
+            <div className="flex justify-between items-center mb-2">
+              <label className="block text-sm font-medium text-slate-700 flex items-center gap-2">
+                <ClipboardList size={18} />
+                Pegar Información de la Minuta
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleCopyPrompt}
+                  className="text-xs bg-slate-50 text-slate-600 px-3 py-1.5 rounded-lg font-semibold hover:bg-slate-100 transition-colors flex items-center gap-1.5 border border-slate-200"
+                >
+                  <Copy size={14} />
+                  Copiar Prompt para Copilot
+                </button>
+                <button
+                  onClick={handlePasteFromCopilot}
+                  className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-semibold hover:bg-indigo-100 transition-colors flex items-center gap-1.5 border border-indigo-100"
+                >
+                  <ClipboardList size={14} />
+                  Pegar desde Copilot
+                </button>
+              </div>
+            </div>
             <textarea
               value={formData.transcript}
               onChange={(e) =>
@@ -169,6 +281,9 @@ export default function NewMinute() {
               placeholder="Pega aquí la información estructurada (Fecha, Hora, Objetivo, Temas, etc...)"
               className="w-full rounded-lg border-slate-300 border p-4 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
             />
+            <p className="text-xs text-slate-500 mt-2">
+              Tip: Si el botón de pegar no funciona, usa <strong>Ctrl+V</strong> (o <strong>Cmd+V</strong>) directamente en el cuadro de texto.
+            </p>
           </div>
 
           <div className="pt-6 border-t border-slate-100 flex justify-end">
@@ -189,23 +304,41 @@ export default function NewMinute() {
       )}
 
       {step === 2 && aiData && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 space-y-8">
+        <>
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 space-y-8">
           <div className="flex justify-between items-center border-b border-slate-100 pb-4">
             <h2 className="text-xl font-semibold text-slate-800">
               Revisión de Contenido Generado
             </h2>
-            <button
-              onClick={handleSaveAndDownload}
-              disabled={loading}
-              className="bg-emerald-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-emerald-700 transition-colors flex items-center gap-2 disabled:opacity-50"
-            >
-              {loading ? (
-                <RefreshCw className="animate-spin" size={20} />
-              ) : (
-                <Download size={20} />
-              )}
-              Guardar y Descargar Word
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowPreview(true)}
+                className="bg-slate-100 text-slate-700 px-4 py-2.5 rounded-lg font-medium hover:bg-slate-200 transition-colors flex items-center gap-2"
+              >
+                <Eye size={20} />
+                Vista Previa
+              </button>
+              <button
+                onClick={handleDownloadPDF}
+                disabled={loading}
+                className="bg-red-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                <FileDown size={20} />
+                Descargar PDF
+              </button>
+              <button
+                onClick={handleSaveAndDownload}
+                disabled={loading}
+                className="bg-emerald-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-emerald-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                {loading ? (
+                  <RefreshCw className="animate-spin" size={20} />
+                ) : (
+                  <Download size={20} />
+                )}
+                Guardar y Word
+              </button>
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -236,6 +369,20 @@ export default function NewMinute() {
                   onChange={(e) =>
                     setAiData({ ...aiData, client: e.target.value })
                   }
+                  className="w-full rounded-lg border-slate-300 border p-2.5 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Nombre de la Reunión
+                </label>
+                <input
+                  type="text"
+                  value={aiData.meeting_name || ""}
+                  onChange={(e) =>
+                    setAiData({ ...aiData, meeting_name: e.target.value })
+                  }
+                  placeholder="Ej: Revisión Semanal de Proyecto"
                   className="w-full rounded-lg border-slate-300 border p-2.5 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
@@ -576,7 +723,183 @@ export default function NewMinute() {
             </button>
           </div>
         </div>
+
+      {/* Prompt Guide Modal */}
+      {showPromptGuide && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                <Info className="text-indigo-600" size={20} />
+                Prompt para Copilot / ChatGPT
+              </h3>
+              <button onClick={() => setShowPromptGuide(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <p className="text-sm text-slate-600">
+                Copia y pega este prompt en Copilot o ChatGPT junto con tus notas o transcripción para obtener el formato exacto que este gestor puede procesar automáticamente:
+              </p>
+              
+              <div className="bg-slate-900 text-slate-300 p-4 rounded-xl font-mono text-sm relative group">
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(COPILOT_PROMPT);
+                    alert("¡Prompt copiado al portapapeles!");
+                  }}
+                  className="absolute top-3 right-3 p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors text-white"
+                  title="Copiar prompt"
+                >
+                  <Copy size={16} />
+                </button>
+                <pre className="whitespace-pre-wrap leading-relaxed">
+                  {COPILOT_PROMPT}
+                </pre>
+              </div>
+              
+              <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl text-sm text-blue-800">
+                <p className="font-bold mb-1">💡 Consejo:</p>
+                <p>Una vez que Copilot te devuelva el texto, simplemente cópialo y pégalo en el cuadro de texto de "Nueva Minuta" para que el sistema lo procese automáticamente.</p>
+              </div>
+            </div>
+            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+              <button onClick={() => setShowPromptGuide(false)} className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
       )}
+
+        {/* Preview Modal */}
+        {showPreview && (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 className="font-bold text-slate-800">Vista Previa de la Minuta</h3>
+                <button onClick={() => setShowPreview(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-8 bg-white">
+                <div className="max-w-3xl mx-auto border border-slate-200 p-12 shadow-sm">
+                  <div className="flex justify-between items-start mb-8">
+                    <h1 className="text-2xl font-bold text-slate-900">MINUTA DE REUNIÓN</h1>
+                    <div className="text-right text-sm space-y-1">
+                      <p><span className="font-bold text-indigo-600">FECHA:</span> {formatDateForDisplay(aiData.date)}</p>
+                      <p><span className="font-bold text-indigo-600">HORA:</span> {aiData.start_time} - {aiData.end_time}</p>
+                      <p><span className="font-bold text-indigo-600">LUGAR:</span> {aiData.location}</p>
+                      <p><span className="font-bold text-indigo-600">Consecutivo:</span> {aiData.minute_number}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 mb-8">
+                    <p><span className="font-bold text-indigo-600">REUNIÓN / NOMBRE DEL PROYECTO:</span> {aiData.meeting_name || aiData.client}</p>
+                    <p><span className="font-bold text-indigo-600">ACTA PREPARADA POR:</span> {aiData.responsible}</p>
+                  </div>
+
+                  <div className="mb-8">
+                    <h4 className="font-bold text-indigo-600 mb-2">OBJETIVO DE LA REUNIÓN:</h4>
+                    <p className="text-sm text-slate-700">{aiData.objective}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-8 mb-8">
+                    <div>
+                      <h4 className="font-bold bg-indigo-600 text-white px-3 py-1 text-sm mb-2">ASISTENTES</h4>
+                      <ul className="text-sm list-disc list-inside text-slate-700">
+                        {aiData.attendees.map((a: string) => <li key={a}>{a}</li>)}
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-bold bg-indigo-600 text-white px-3 py-1 text-sm mb-2">AUSENTES</h4>
+                      <ul className="text-sm list-disc list-inside text-slate-700">
+                        {aiData.absentees.map((a: string) => <li key={a}>{a}</li>)}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="mb-8">
+                    <table className="w-full border-collapse text-sm">
+                      <thead>
+                        <tr className="bg-indigo-600 text-white">
+                          <th className="border border-indigo-700 p-2 text-left w-1/3">Situación</th>
+                          <th className="border border-indigo-700 p-2 text-left">Comentarios/Anotaciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {aiData.topics.map((t: any, i: number) => (
+                          <tr key={i}>
+                            <td className="border border-slate-200 p-2 font-bold align-top">{t.title}</td>
+                            <td className="border border-slate-200 p-2 align-top">
+                              <p className="mb-2">{t.description}</p>
+                              {t.points?.length > 0 && (
+                                <div className="mb-2">
+                                  <p className="font-bold text-xs uppercase text-slate-500">Puntos Importantes:</p>
+                                  <ul className="list-disc list-inside pl-2">
+                                    {t.points.map((p: string, pi: number) => <li key={pi}>{p}</li>)}
+                                  </ul>
+                                </div>
+                              )}
+                              {t.decisions?.length > 0 && (
+                                <div>
+                                  <p className="font-bold text-xs uppercase text-slate-500">Decisiones:</p>
+                                  <ul className="list-disc list-inside pl-2">
+                                    {t.decisions.map((d: string, di: number) => <li key={di}>{d}</li>)}
+                                  </ul>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {aiData.agreements?.length > 0 && (
+                    <div className="mb-8">
+                      <h4 className="font-bold text-indigo-600 mb-2">ACUERDOS:</h4>
+                      <table className="w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="bg-indigo-600 text-white">
+                            <th className="border border-indigo-700 p-2 text-left">Acción</th>
+                            <th className="border border-indigo-700 p-2 text-left">Responsable</th>
+                            <th className="border border-indigo-700 p-2 text-left">Fecha</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {aiData.agreements.map((a: any, i: number) => (
+                            <tr key={i}>
+                              <td className="border border-slate-200 p-2">{a.action}</td>
+                              <td className="border border-slate-200 p-2">{a.responsible}</td>
+                              <td className="border border-slate-200 p-2">{a.commitment_date}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {aiData.pending_topics?.length > 0 && (
+                    <div>
+                      <h4 className="font-bold text-indigo-600 mb-2">TEMAS PENDIENTES:</h4>
+                      <ul className="text-sm list-disc list-inside text-slate-700">
+                        {aiData.pending_topics.map((t: string, i: number) => <li key={i}>{t}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+                <button onClick={() => setShowPreview(false)} className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                  Cerrar Vista Previa
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    )}
     </div>
   );
 }

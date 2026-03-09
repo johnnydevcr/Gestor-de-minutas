@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { FileText, Download, Edit, Search, Filter } from "lucide-react";
+import { FileText, Download, Edit, Search, Filter, FileDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { generateWordDocument } from "../services/word";
+import { generatePDF } from "../services/pdf";
 import { storageService } from "../services/storage";
 
 export default function History() {
@@ -51,6 +52,18 @@ export default function History() {
     } catch (error) {
       console.error(error);
       alert("Error al descargar la minuta.");
+    }
+  };
+
+  const handleDownloadPDF = async (id: number) => {
+    try {
+      const minuteData = storageService.getMinuteById(id);
+      if (!minuteData) throw new Error("Minute not found");
+      
+      await generatePDF(minuteData);
+    } catch (error) {
+      console.error(error);
+      alert("Error al descargar el PDF.");
     }
   };
 
@@ -121,6 +134,13 @@ export default function History() {
                     </td>
                     <td className="px-6 py-4 text-slate-600">{minute.responsible}</td>
                     <td className="px-6 py-4 text-right space-x-2">
+                      <button 
+                        onClick={() => handleDownloadPDF(minute.id)} 
+                        className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" 
+                        title="Descargar PDF"
+                      >
+                        <FileDown size={18} />
+                      </button>
                       <button 
                         onClick={() => handleDownload(minute.id)} 
                         className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" 
