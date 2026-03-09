@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Play, Download, RefreshCw, X, Plus } from "lucide-react";
-import { analyzeTranscript } from "../services/ai";
+import { FileText, Play, Download, RefreshCw, X, Plus, ClipboardList } from "lucide-react";
+import { parseMinuteText } from "../services/parser";
 import { generateWordDocument } from "../services/word";
 
 export default function NewMinute() {
@@ -27,7 +27,7 @@ export default function NewMinute() {
 
   const handleAnalyze = async () => {
     if (!formData.transcript.trim()) {
-      alert("Por favor ingresa la transcripción.");
+      alert("Por favor ingresa la información de la minuta.");
       return;
     }
     if (!formData.clientId) {
@@ -36,19 +36,20 @@ export default function NewMinute() {
     }
     setLoading(true);
     try {
-      const result = await analyzeTranscript(formData.transcript);
+      // Use manual parser instead of AI
+      const result = parseMinuteText(formData.transcript);
       const selectedClient = clients.find(c => c.id.toString() === formData.clientId);
       
       setAiData({
         ...result,
-        client: selectedClient ? selectedClient.name : result.client,
+        client: selectedClient ? selectedClient.name : (result.client || "Sin nombre"),
         client_id: formData.clientId,
-        minute_number: selectedClient ? `MN-${selectedClient.code}-0000` : result.minute_number
+        minute_number: selectedClient ? `MN-${selectedClient.code}-0000` : (result.minute_number || "MN-000")
       });
       setStep(2);
     } catch (error) {
       console.error(error);
-      alert("Error al analizar la transcripción.");
+      alert("Error al procesar el texto.");
     } finally {
       setLoading(false);
     }
@@ -125,7 +126,7 @@ export default function NewMinute() {
         </h1>
         <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
           <span className={step >= 1 ? "text-indigo-600" : ""}>
-            1. Transcripción y Cliente
+            1. Información y Cliente
           </span>
           <span>&gt;</span>
           <span className={step >= 2 ? "text-indigo-600" : ""}>
@@ -137,7 +138,7 @@ export default function NewMinute() {
       {step === 1 && (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 space-y-6">
           <h2 className="text-xl font-semibold text-slate-800 border-b border-slate-100 pb-4">
-            Transcripción y Cliente
+            Información de la Minuta
           </h2>
 
           <div>
@@ -162,8 +163,8 @@ export default function NewMinute() {
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
-              <FileText size={18} />
-              Pegar Transcripción de la Reunión
+              <ClipboardList size={18} />
+              Pegar Información de la Minuta
             </label>
             <textarea
               value={formData.transcript}
@@ -171,7 +172,7 @@ export default function NewMinute() {
                 setFormData({ ...formData, transcript: e.target.value })
               }
               rows={12}
-              placeholder="Pega aquí el texto de la transcripción de Teams, Zoom, etc..."
+              placeholder="Pega aquí la información estructurada (Fecha, Hora, Objetivo, Temas, etc...)"
               className="w-full rounded-lg border-slate-300 border p-4 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
             />
           </div>
@@ -187,7 +188,7 @@ export default function NewMinute() {
               ) : (
                 <Play size={20} />
               )}
-              {loading ? "Analizando con IA..." : "Analizar Transcripción"}
+              {loading ? "Procesando..." : "Procesar Información"}
             </button>
           </div>
         </div>
@@ -577,7 +578,7 @@ export default function NewMinute() {
               onClick={() => setStep(1)}
               className="text-slate-600 px-6 py-2.5 rounded-lg font-medium hover:bg-slate-50 transition-colors"
             >
-              Volver a Transcripción
+              Volver a Información
             </button>
           </div>
         </div>

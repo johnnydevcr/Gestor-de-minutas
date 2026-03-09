@@ -69,6 +69,13 @@ db.exec(`
   );
 `);
 
+// Migration: Add client_id to minutes if it doesn't exist
+try {
+  db.prepare("ALTER TABLE minutes ADD COLUMN client_id INTEGER").run();
+} catch (e) {
+  // Column already exists or table doesn't exist yet (handled by CREATE TABLE)
+}
+
 const upload = multer({ storage: multer.memoryStorage() });
 
 async function startServer() {
@@ -393,39 +400,8 @@ async function startServer() {
   });
 
   app.post("/api/minutes", (req, res) => {
-    const {
-      minute_number,
-      client,
-      client_id,
-      date,
-      start_time,
-      end_time,
-      location,
-      responsible,
-      attendees,
-      absentees,
-      objective,
-      executive_summary,
-      topics,
-      pending_topics,
-      transcript,
-      agreements,
-    } = req.body;
-
-    const insertMinute = db.prepare(`
-      INSERT INTO minutes (
-        minute_number, client, client_id, date, start_time, end_time, location, responsible,
-        attendees, absentees, objective, executive_summary, topics, pending_topics, transcript
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const insertAgreement = db.prepare(`
-      INSERT INTO agreements (minute_id, action, responsible, commitment_date, status)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-
-    const transaction = db.transaction(() => {
-      const info = insertMinute.run(
+    try {
+      const {
         minute_number,
         client,
         client_id,
@@ -434,104 +410,147 @@ async function startServer() {
         end_time,
         location,
         responsible,
-        JSON.stringify(attendees || []),
-        JSON.stringify(absentees || []),
+        attendees,
+        absentees,
         objective,
         executive_summary,
-        JSON.stringify(topics || []),
-        JSON.stringify(pending_topics || []),
+        topics,
+        pending_topics,
         transcript,
-      );
+        agreements,
+      } = req.body;
 
-      const minuteId = info.lastInsertRowid;
+      const insertMinute = db.prepare(`
+        INSERT INTO minutes (
+          minute_number, client, client_id, date, start_time, end_time, location, responsible,
+          attendees, absentees, objective, executive_summary, topics, pending_topics, transcript
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
 
-      if (agreements && Array.isArray(agreements)) {
-        for (const ag of agreements) {
-          insertAgreement.run(
-            minuteId,
-            ag.action,
-            ag.responsible,
-            ag.commitment_date,
-            ag.status || "pendiente",
-          );
+      const insertAgreement = db.prepare(`
+        INSERT INTO agreements (minute_id, action, responsible, commitment_date, status)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+
+      const transaction = db.transaction(() => {
+        const info = insertMinute.run(
+          minute_number,
+          client,
+          client_id,
+          date,
+          start_time,
+          end_time,
+          location,
+          responsible,
+          JSON.stringify(attendees || []),
+          JSON.stringify(absentees || []),
+          objective,
+          executive_summary,
+          JSON.stringify(topics || []),
+          JSON.stringify(pending_topics || []),
+          transcript,
+        );
+
+        const minuteId = info.lastInsertRowid;
+
+        if (agreements && Array.isArray(agreements)) {
+          for (const ag of agreements) {
+            insertAgreement.run(
+              minuteId,
+              ag.action,
+              ag.responsible,
+              ag.commitment_date,
+              ag.status || "pendiente",
+            );
+          }
         }
-      }
-      return minuteId;
-    });
+        return minuteId;
+      });
 
-    const newId = transaction();
-    res.json({ id: newId });
+      const newId = transaction();
+      res.json({ id: newId });
+    } catch (error: any) {
+      console.error("Error saving minute:", error);
+      res.status(500).json({ error: error.message });
+    }
   });
 
   app.put("/api/minutes/:id", (req, res) => {
-    const {
-      client,
-      date,
-      start_time,
-      end_time,
-      location,
-      responsible,
-      attendees,
-      absentees,
-      objective,
-      executive_summary,
-      topics,
-      pending_topics,
-      transcript,
-      agreements,
-    } = req.body;
-    const id = req.params.id;
-
-    const updateMinute = db.prepare(`
-      UPDATE minutes SET
-        client = ?, date = ?, start_time = ?, end_time = ?, location = ?, responsible = ?,
-        attendees = ?, absentees = ?, objective = ?, executive_summary = ?, topics = ?, pending_topics = ?, transcript = ?
-      WHERE id = ?
-    `);
-
-    const deleteAgreements = db.prepare(
-      "DELETE FROM agreements WHERE minute_id = ?",
-    );
-    const insertAgreement = db.prepare(`
-      INSERT INTO agreements (minute_id, action, responsible, commitment_date, status)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-
-    const transaction = db.transaction(() => {
-      updateMinute.run(
+    try {
+      const {
         client,
+        client_id,
         date,
         start_time,
         end_time,
         location,
         responsible,
-        JSON.stringify(attendees || []),
-        JSON.stringify(absentees || []),
+        attendees,
+        absentees,
         objective,
         executive_summary,
-        JSON.stringify(topics || []),
-        JSON.stringify(pending_topics || []),
+        topics,
+        pending_topics,
         transcript,
-        id,
+        agreements,
+      } = req.body;
+      const id = req.params.id;
+
+      const updateMinute = db.prepare(`
+        UPDATE minutes SET
+          client = ?, client_id = ?, date = ?, start_time = ?, end_time = ?, location = ?, responsible = ?,
+          attendees = ?, absentees = ?, objective = ?, executive_summary = ?, topics = ?, pending_topics = ?, transcript = ?
+        WHERE id = ?
+      `);
+
+      const deleteAgreements = db.prepare(
+        "DELETE FROM agreements WHERE minute_id = ?",
       );
+      const insertAgreement = db.prepare(`
+        INSERT INTO agreements (minute_id, action, responsible, commitment_date, status)
+        VALUES (?, ?, ?, ?, ?)
+      `);
 
-      deleteAgreements.run(id);
+      const transaction = db.transaction(() => {
+        updateMinute.run(
+          client,
+          client_id,
+          date,
+          start_time,
+          end_time,
+          location,
+          responsible,
+          JSON.stringify(attendees || []),
+          JSON.stringify(absentees || []),
+          objective,
+          executive_summary,
+          JSON.stringify(topics || []),
+          JSON.stringify(pending_topics || []),
+          transcript,
+          id,
+        );
 
-      if (agreements && Array.isArray(agreements)) {
-        for (const ag of agreements) {
-          insertAgreement.run(
-            id,
-            ag.action,
-            ag.responsible,
-            ag.commitment_date,
-            ag.status || "pendiente",
-          );
+        deleteAgreements.run(id);
+
+        if (agreements && Array.isArray(agreements)) {
+          for (const ag of agreements) {
+            insertAgreement.run(
+              id,
+              ag.action,
+              ag.responsible,
+              ag.commitment_date,
+              ag.status || "pendiente",
+            );
+          }
         }
-      }
-    });
+      });
 
-    transaction();
-    res.json({ success: true });
+      transaction();
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error updating minute:", error);
+      res.status(500).json({ error: error.message });
+    }
   });
 
   // Agreements
