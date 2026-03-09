@@ -15,17 +15,26 @@ import {
   VerticalAlign,
   TableLayoutType,
 } from "docx";
+import { storageService } from "./storage";
 
 export async function generateWordDocument(templateData: ArrayBuffer, data: any) {
-  // Fetch logo
+  // Fetch logo from storage
   let logoBuffer: ArrayBuffer | null = null;
   try {
-    const logoResponse = await fetch("/api/settings/logo");
-    if (logoResponse.ok) {
-      logoBuffer = await logoResponse.arrayBuffer();
+    const logoBase64 = storageService.getLogo();
+    if (logoBase64) {
+      // Convert base64 to ArrayBuffer
+      const base64Data = logoBase64.split(",")[1];
+      const binaryString = window.atob(base64Data);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      logoBuffer = bytes.buffer;
     }
   } catch (e) {
-    console.error("Could not fetch logo", e);
+    console.error("Could not process logo", e);
   }
 
   const BLUE_PRIMARY = "0070C0";

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Users, Plus, Edit2, Trash2, RefreshCw, Search } from "lucide-react";
+import { storageService } from "../services/storage";
 
 interface Client {
   id: number;
@@ -23,8 +24,7 @@ export default function Clients() {
   const fetchClients = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/clients");
-      const data = await res.json();
+      const data = storageService.getClients();
       setClients(data);
     } catch (error) {
       console.error("Error fetching clients:", error);
@@ -35,25 +35,14 @@ export default function Clients() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const url = editingClient ? `/api/clients/${editingClient.id}` : "/api/clients";
-    const method = editingClient ? "PUT" : "POST";
-
     try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (res.ok) {
-        fetchClients();
-        closeModal();
-      } else {
-        const data = await res.json();
-        alert(data.error || "Error al guardar el cliente");
-      }
+      const clientToSave = editingClient ? { ...editingClient, ...formData } : formData;
+      storageService.saveClient(clientToSave);
+      fetchClients();
+      closeModal();
     } catch (error) {
       console.error("Error saving client:", error);
+      alert("Error al guardar el cliente");
     }
   };
 
@@ -61,10 +50,8 @@ export default function Clients() {
     if (!confirm("¿Estás seguro de eliminar este cliente?")) return;
 
     try {
-      const res = await fetch(`/api/clients/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        fetchClients();
-      }
+      storageService.deleteClient(id);
+      fetchClients();
     } catch (error) {
       console.error("Error deleting client:", error);
     }

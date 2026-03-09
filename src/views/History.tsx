@@ -4,6 +4,7 @@ import { es } from "date-fns/locale";
 import { FileText, Download, Edit, Search, Filter } from "lucide-react";
 import { Link } from "react-router-dom";
 import { generateWordDocument } from "../services/word";
+import { storageService } from "../services/storage";
 
 export default function History() {
   const [minutes, setMinutes] = useState<any[]>([]);
@@ -22,8 +23,7 @@ export default function History() {
 
   const fetchClients = async () => {
     try {
-      const res = await fetch("/api/clients");
-      const data = await res.json();
+      const data = storageService.getClients();
       setClients(data);
     } catch (error) {
       console.error("Error fetching clients:", error);
@@ -33,11 +33,7 @@ export default function History() {
   const fetchMinutes = async () => {
     setLoading(true);
     try {
-      const url = selectedClientId 
-        ? `/api/minutes?client_id=${selectedClientId}` 
-        : "/api/minutes";
-      const res = await fetch(url);
-      const data = await res.json();
+      const data = storageService.getMinutes(selectedClientId);
       setMinutes(data);
     } catch (error) {
       console.error("Error fetching minutes:", error);
@@ -48,8 +44,8 @@ export default function History() {
 
   const handleDownload = async (id: number) => {
     try {
-      const res = await fetch(`/api/minutes/${id}`);
-      const minuteData = await res.json();
+      const minuteData = storageService.getMinuteById(id);
+      if (!minuteData) throw new Error("Minute not found");
       
       await generateWordDocument(new ArrayBuffer(0), minuteData);
     } catch (error) {

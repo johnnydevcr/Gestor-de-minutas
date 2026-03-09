@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 import { Download, LayoutTemplate } from "lucide-react";
+import { storageService } from "../services/storage";
 
 export default function Designs() {
   const [designs, setDesigns] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("/api/designs")
-      .then((res) => res.json())
-      .then((data) => setDesigns(data));
+    const data = storageService.getDesigns();
+    setDesigns(data);
   }, []);
 
   const downloadDesign = (id: string, name: string) => {
-    window.open(`/api/designs/${id}/download`, "_blank");
+    alert("Descarga de plantillas no disponible en versión estática.");
   };
 
   return (

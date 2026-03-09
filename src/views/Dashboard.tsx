@@ -1,20 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, CheckSquare, Clock, Users } from "lucide-react";
+import { storageService } from "../services/storage";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({ minutes: 0, pendingAgreements: 0 });
 
   useEffect(() => {
-    // Fetch stats
-    Promise.all([
-      fetch("/api/minutes").then(r => r.json()),
-      fetch("/api/agreements").then(r => r.json())
-    ]).then(([minutes, agreements]) => {
-      setStats({
-        minutes: minutes.length,
-        pendingAgreements: agreements.filter((a: any) => a.status === 'pendiente').length
-      });
+    // Fetch stats from storage
+    const minutes = storageService.getMinutes();
+    const agreements = storageService.getAgreements();
+    
+    setStats({
+      minutes: minutes.length,
+      pendingAgreements: agreements.filter((a: any) => a.status === 'pendiente').length
     });
   }, []);
 

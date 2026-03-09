@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FileText, Play, Download, RefreshCw, X, Plus, ClipboardList } from "lucide-react";
 import { parseMinuteText } from "../services/parser";
 import { generateWordDocument } from "../services/word";
+import { storageService } from "../services/storage";
 
 export default function NewMinute() {
   const navigate = useNavigate();
@@ -20,9 +21,8 @@ export default function NewMinute() {
   const [newAbsentee, setNewAbsentee] = useState("");
 
   useEffect(() => {
-    fetch("/api/clients")
-      .then((res) => res.json())
-      .then((data) => setClients(data));
+    const data = storageService.getClients();
+    setClients(data);
   }, []);
 
   const handleAnalyze = async () => {
@@ -58,21 +58,15 @@ export default function NewMinute() {
   const handleSaveAndDownload = async () => {
     setLoading(true);
     try {
-      // 1. Save to DB
+      // 1. Save to Local Storage
       const payload = {
         ...aiData,
         transcript: formData.transcript,
       };
 
-      const res = await fetch("/api/minutes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      storageService.saveMinute(payload);
 
-      if (!res.ok) throw new Error("Error saving minute");
-
-      // 2. Generate Word (templateBuffer is no longer used but kept for compatibility)
+      // 2. Generate Word
       await generateWordDocument(new ArrayBuffer(0), payload);
 
       navigate("/history");

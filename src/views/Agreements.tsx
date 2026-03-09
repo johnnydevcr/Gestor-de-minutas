@@ -3,23 +3,19 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { clsx } from "clsx";
+import { storageService } from "../services/storage";
 
 export default function Agreements() {
   const [agreements, setAgreements] = useState<any[]>([]);
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
-    fetch("/api/agreements")
-      .then(res => res.json())
-      .then(data => setAgreements(data));
+    const data = storageService.getAgreements();
+    setAgreements(data);
   }, []);
 
   const updateStatus = async (id: number, status: string) => {
-    await fetch(`/api/agreements/${id}/status`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status })
-    });
+    storageService.updateAgreementStatus(id, status);
     setAgreements(agreements.map(a => a.id === id ? { ...a, status } : a));
   };
 

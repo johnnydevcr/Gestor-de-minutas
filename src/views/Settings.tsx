@@ -4,45 +4,31 @@ import {
   Upload,
   Image as ImageIcon,
 } from "lucide-react";
+import { storageService } from "../services/storage";
 
 export default function Settings() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Check if logo exists
-    fetch("/api/settings/logo")
-      .then((res) => {
-        if (res.ok) {
-          setLogoUrl("/api/settings/logo?" + new Date().getTime());
-        }
-      })
-      .catch((err) => console.error(err));
+    const logo = storageService.getLogo();
+    if (logo) {
+      setLogoUrl(logo);
+    }
   }, []);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append("logo", file);
-
-    try {
-      const res = await fetch("/api/settings/logo", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (res.ok) {
-        setLogoUrl(URL.createObjectURL(file));
-        alert("Logo actualizado correctamente.");
-      } else {
-        alert("Error al subir el logo.");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Error al subir el logo.");
-    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      storageService.saveSettings("logo", base64String);
+      setLogoUrl(base64String);
+      alert("Logo actualizado correctamente.");
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
