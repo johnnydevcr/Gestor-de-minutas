@@ -1,0 +1,5 @@
+{
+  "name": "AI Meeting Intelligence",
+  "description": "Automatiza la generación de minutas de reunión a partir de transcripciones usando IA.",
+  "requestFramePermissions": []
+}
