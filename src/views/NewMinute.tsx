@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { FileText, Play, Download, RefreshCw, X, Plus, ClipboardList, Eye, FileDown, Copy, Info } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { FileText, Play, Download, RefreshCw, X, Plus, ClipboardList, Eye, FileDown, Copy, Info, Save } from "lucide-react";
 import { parseMinuteText, validateMinuteText, formatDateForDisplay } from "../services/parser";
 import { generateWordDocument } from "../services/word";
 import { generatePDF } from "../services/pdf";
@@ -8,9 +8,11 @@ import { storageService } from "../services/storage";
 
 export default function NewMinute() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
+  const [editId, setEditId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     transcript: "",
@@ -23,39 +25,39 @@ export default function NewMinute() {
   const [newAttendee, setNewAttendee] = useState("");
   const [newAbsentee, setNewAbsentee] = useState("");
 
-  const COPILOT_PROMPT = `Actúa como un asistente experto en redacción de minutas. A partir de la siguiente transcripción o notas de reunión, genera una minuta estructurada siguiendo ESTRICTAMENTE este formato:
+  const COPILOT_PROMPT = `Actúa como un asistente experto en redacción de minutas corporativas. A partir de la siguiente transcripción o notas de reunión, genera una minuta estructurada siguiendo ESTRICTAMENTE este formato:
 
 Nombre de la reunión: [Nombre descriptivo]
+Cliente: [Nombre del cliente]
 Fecha: [DD/MM/AAAA]
 Hora inicio: [HH:MM]
 Hora fin: [HH:MM]
-Lugar: [Ubicación o Enlace]
+Lugar: [Ubicación física o enlace]
 Responsable: [Nombre de quien redacta]
-Asistentes: [Nombre 1, Nombre 2, ...]
-Ausentes: [Nombre 1, Nombre 2, ...]
-Objetivo: [Breve descripción del propósito]
+Consecutivo: [Número de acta]
+Objetivo: [Descripción del propósito]
+Asistentes: [Nombre 1, Nombre 2, Nombre 3]
+Agenda: [Tema 1, Tema 2, Tema 3]
 
 Temas Tratados:
-Tema: [Título del tema]
-Detalle: [Explicación amplia y detallada de todo lo discutido en este punto. No escatimes en detalles relevantes.]
-Puntos Importantes: [Opcional: Solo si hay puntos específicos que resumir en frases cortas. Si no hay, omite esta línea.]
-Decisiones: [Opcional: Solo si se llegó a acuerdos o decisiones específicas en este tema. Si no hay, omite esta línea.]
+Tema: [Título del Tema 1]
+Detalle: [Explicación amplia y profesional de lo discutido en este punto]
+Puntos importantes: [Punto A, Punto B, Punto C]
+Decisiones: [Decisión X, Decisión Y]
 
-Tema: [Siguiente tema...]
+Tema: [Título del Tema 2]
 ...
 
-Acuerdos:
-[Acción 1] - [Responsable] - [Fecha límite]
-[Acción 2] - [Responsable] - [Fecha límite]
+Acuerdos y compromisos:
+[Descripción del acuerdo 1] | [Responsable] | [Fecha límite]
+[Descripción del acuerdo 2] | [Responsable] | [Fecha límite]
 
-Temas Pendientes:
-- [Tema A]
-- [Tema B]
-
-Notas adicionales:
-- Mantén un tono profesional.
-- Si falta algún dato, usa 'Por definir' o deja el espacio sugerido.
-- No añadas introducciones ni conclusiones fuera del formato.`;
+Reglas de Formato OBLIGATORIAS:
+1. NO hagas saltos de línea entre la etiqueta y su valor (ejemplo correcto: "Asistentes: Juan, Pedro").
+2. NO uses viñetas (-) para las secciones de Asistentes, Agenda, Puntos importantes ni Decisiones. Usa siempre una lista separada por comas en la misma línea.
+3. Las secciones 'Puntos importantes:' y 'Decisiones:' son opcionales dentro de cada Tema.
+4. El campo 'Detalle:' debe ser un párrafo continuo con la explicación detallada.
+5. Mantén un tono formal y ejecutivo.`;
 
   const handleCopyPrompt = () => {
     navigator.clipboard.writeText(COPILOT_PROMPT);
@@ -65,7 +67,23 @@ Notas adicionales:
   useEffect(() => {
     const data = storageService.getClients();
     setClients(data);
-  }, []);
+
+    // Check for edit mode
+    const params = new URLSearchParams(location.search);
+    const id = params.get("edit");
+    if (id) {
+      const minuteToEdit = storageService.getMinuteById(parseInt(id));
+      if (minuteToEdit) {
+        setEditId(id);
+        setFormData({
+          transcript: minuteToEdit.transcript || "",
+          clientId: minuteToEdit.client_id || "",
+        });
+        setAiData(minuteToEdit);
+        setStep(2); // Jump to step 2 if editing
+      }
+    }
+  }, [location.search]);
 
   const handlePasteFromCopilot = async () => {
     try {
@@ -149,7 +167,12 @@ Notas adicionales:
         transcript: formData.transcript,
       };
 
-      storageService.saveMinute(payload);
+      if (editId) {
+        payload.id = parseInt(editId);
+        storageService.updateMinute(payload);
+      } else {
+        storageService.saveMinute(payload);
+      }
 
       // 2. Generate Word
       await generateWordDocument(new ArrayBuffer(0), payload);
@@ -552,6 +575,21 @@ Notas adicionales:
 
             <div>
               <label className="block text-sm font-semibold text-slate-900 mb-2">
+                Agenda
+              </label>
+              <textarea
+                value={(aiData.agenda || []).join("\n")}
+                onChange={(e) =>
+                  setAiData({ ...aiData, agenda: e.target.value.split("\n") })
+                }
+                rows={4}
+                placeholder="Un punto por línea..."
+                className="w-full rounded-lg border-slate-300 border p-3 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-900 mb-2">
                 Resumen Ejecutivo
               </label>
               <textarea
@@ -584,45 +622,53 @@ Notas adicionales:
                       }}
                       className="w-full font-semibold bg-transparent border-b border-slate-300 focus:border-indigo-500 focus:ring-0 px-0 py-1"
                     />
-                    <textarea
-                      value={topic.description || ""}
-                      onChange={(e) => {
-                        const newTopics = [...aiData.topics];
-                        newTopics[idx].description = e.target.value;
-                        setAiData({ ...aiData, topics: newTopics });
-                      }}
-                      rows={2}
-                      className="w-full rounded-lg border-slate-300 border p-2 text-sm"
-                    />
+                    <div className="grid grid-cols-1 gap-4">
+                      <div>
+                        <span className="text-xs font-medium text-slate-500 uppercase">
+                          Detalle (Explicación amplia)
+                        </span>
+                        <textarea
+                          value={topic.description || ""}
+                          onChange={(e) => {
+                            const newTopics = [...aiData.topics];
+                            newTopics[idx].description = e.target.value;
+                            setAiData({ ...aiData, topics: newTopics });
+                          }}
+                          rows={4}
+                          className="w-full rounded-lg border-slate-300 border p-2 text-sm mt-1"
+                        />
+                      </div>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <span className="text-xs font-medium text-slate-500 uppercase">
-                          Puntos Importantes
+                          Puntos Importantes (Opcional)
                         </span>
                         <textarea
                           value={(topic.points || []).join("\n")}
                           onChange={(e) => {
                             const newTopics = [...aiData.topics];
-                            newTopics[idx].points = e.target.value.split("\n");
+                            newTopics[idx].points = e.target.value.split("\n").filter(p => p.trim() !== "");
                             setAiData({ ...aiData, topics: newTopics });
                           }}
                           rows={3}
+                          placeholder="Un punto por línea..."
                           className="w-full rounded-lg border-slate-300 border p-2 text-sm mt-1"
                         />
                       </div>
                       <div>
                         <span className="text-xs font-medium text-slate-500 uppercase">
-                          Decisiones
+                          Decisiones (Opcional)
                         </span>
                         <textarea
                           value={(topic.decisions || []).join("\n")}
                           onChange={(e) => {
                             const newTopics = [...aiData.topics];
-                            newTopics[idx].decisions =
-                              e.target.value.split("\n");
+                            newTopics[idx].decisions = e.target.value.split("\n").filter(d => d.trim() !== "");
                             setAiData({ ...aiData, topics: newTopics });
                           }}
                           rows={3}
+                          placeholder="Una decisión por línea..."
                           className="w-full rounded-lg border-slate-300 border p-2 text-sm mt-1"
                         />
                       </div>

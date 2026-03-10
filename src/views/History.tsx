@@ -134,6 +134,13 @@ export default function History() {
                     </td>
                     <td className="px-6 py-4 text-slate-600">{minute.responsible}</td>
                     <td className="px-6 py-4 text-right space-x-2">
+                      <Link 
+                        to={`/new?edit=${minute.id}`}
+                        className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" 
+                        title="Editar Minuta"
+                      >
+                        <Edit size={18} />
+                      </Link>
                       <button 
                         onClick={() => handleDownloadPDF(minute.id)} 
                         className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" 

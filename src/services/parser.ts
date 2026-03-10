@@ -40,6 +40,7 @@ export function parseMinuteText(text: string) {
     objective: "",
     executive_summary: "",
     topics: [],
+    agenda: [],
     agreements: [],
     pending_topics: [],
     attendees: [],
@@ -47,6 +48,7 @@ export function parseMinuteText(text: string) {
   };
 
   let currentSection = "";
+  let currentTopicSubSection = "";
 
   for (let line of lines) {
     line = line.trim();
@@ -88,13 +90,24 @@ export function parseMinuteText(text: string) {
       result.responsible = line.substring(12).trim();
       continue;
     }
+    if (lowerLine.startsWith("consecutivo:")) {
+      result.minute_number = line.substring(12).trim();
+      continue;
+    }
     if (lowerLine.startsWith("nombre de la reunión:") || lowerLine.startsWith("reunión:")) {
       result.meeting_name = line.substring(line.indexOf(":") + 1).trim();
-      result.client = result.meeting_name; // Fallback for client if needed
+      continue;
+    }
+    if (lowerLine.startsWith("cliente:")) {
+      result.client = line.substring(8).trim();
       continue;
     }
     if (lowerLine.startsWith("asistentes:")) {
-      result.attendees = line.substring(11).trim().split(",").map(s => s.trim()).filter(s => s);
+      const content = line.substring(line.indexOf(":") + 1).trim();
+      if (content) {
+        result.attendees = content.split(",").map(s => s.trim()).filter(s => s);
+      }
+      currentSection = "attendees";
       continue;
     }
     if (lowerLine.startsWith("ausentes:")) {
@@ -111,7 +124,23 @@ export function parseMinuteText(text: string) {
       currentSection = "topics";
       continue;
     }
-    if (lowerLine.startsWith("acuerdo:") || lowerLine.startsWith("acuerdos:")) {
+    if (lowerLine.startsWith("agenda:")) {
+      const content = line.substring(7).trim();
+      if (content) {
+        result.agenda = content.split(",").map(s => s.trim()).filter(s => s);
+      }
+      currentSection = "agenda";
+      continue;
+    }
+    if (lowerLine.startsWith("asistentes:")) {
+      currentSection = "attendees";
+      const content = line.substring(11).trim();
+      if (content) {
+        result.attendees = content.split(",").map(s => s.trim()).filter(s => s);
+      }
+      continue;
+    }
+    if (lowerLine.startsWith("acuerdo:") || lowerLine.startsWith("acuerdos:") || lowerLine.startsWith("acuerdos y compromisos:")) {
       currentSection = "agreements";
       continue;
     }
@@ -121,7 +150,15 @@ export function parseMinuteText(text: string) {
     }
 
     // Handle content within sections
-    if (currentSection === "topics") {
+    if (currentSection === "attendees") {
+      if (line.startsWith("-") || line.startsWith("*")) {
+        result.attendees.push(line.substring(1).trim());
+      }
+    } else if (currentSection === "agenda") {
+      if (line.startsWith("-") || line.startsWith("*")) {
+        result.agenda.push(line.substring(1).trim());
+      }
+    } else if (currentSection === "topics") {
       if (lowerLine.startsWith("tema:") || lowerLine.startsWith("título:")) {
         result.topics.push({ 
           title: line.substring(line.indexOf(":") + 1).trim(), 
@@ -129,46 +166,56 @@ export function parseMinuteText(text: string) {
           points: [], 
           decisions: [] 
         });
+        currentTopicSubSection = "";
       } else if (lowerLine.startsWith("detalle:") || lowerLine.startsWith("descripción:")) {
         if (result.topics.length > 0) {
           result.topics[result.topics.length - 1].description = line.substring(line.indexOf(":") + 1).trim();
         }
+        currentTopicSubSection = "description";
       } else if (lowerLine.startsWith("puntos importantes:") || lowerLine.startsWith("puntos:")) {
+        currentTopicSubSection = "points";
         if (result.topics.length > 0) {
           const content = line.substring(line.indexOf(":") + 1).trim();
           if (content) {
             const points = content.split(/[,;]|\s*-\s*/).map(s => s.trim()).filter(s => s);
-            result.topics[result.topics.length - 1].points = points;
+            result.topics[result.topics.length - 1].points.push(...points);
           }
         }
       } else if (lowerLine.startsWith("decisiones:") || lowerLine.startsWith("decisión:")) {
+        currentTopicSubSection = "decisions";
         if (result.topics.length > 0) {
           const content = line.substring(line.indexOf(":") + 1).trim();
           if (content) {
             const decisions = content.split(/[,;]|\s*-\s*/).map(s => s.trim()).filter(s => s);
-            result.topics[result.topics.length - 1].decisions = decisions;
+            result.topics[result.topics.length - 1].decisions.push(...decisions);
           }
         }
       } else if (line.startsWith("-") || line.startsWith("*")) {
-        // Handle bullet points for the last active section/topic
         const bulletContent = line.substring(1).trim();
-        if (currentSection === "topics" && result.topics.length > 0) {
-          // If we don't know if it's a point or decision, we might need more state
-          // For now, let's assume if it's a bullet point under a topic, it's a point
-          result.topics[result.topics.length - 1].points.push(bulletContent);
+        if (result.topics.length > 0) {
+          if (currentTopicSubSection === "points") {
+            result.topics[result.topics.length - 1].points.push(bulletContent);
+          } else if (currentTopicSubSection === "decisions") {
+            result.topics[result.topics.length - 1].decisions.push(bulletContent);
+          } else if (currentTopicSubSection === "description") {
+            result.topics[result.topics.length - 1].description += "\n- " + bulletContent;
+          } else {
+            result.topics[result.topics.length - 1].points.push(bulletContent);
+          }
         }
       }
     } else if (currentSection === "agreements") {
-      // Format: Acción - Responsable - Fecha
-      const parts = line.split("-").map(s => s.trim());
-      if (parts[0]) {
+      // Format: Acción | Responsable | Fecha
+      const parts = line.split(/[|-]/).map(s => s.trim());
+      if (parts[0] && !lowerLine.startsWith("acuerdos")) {
         result.agreements.push({
-          action: parts[0],
+          action: parts[0].replace(/^[*-]\s*/, ""),
           responsible: parts[1] || "por confirmar",
           commitment_date: parts[2] || ""
         });
       }
-    } else if (currentSection === "pending_topics") {
+    }
+ else if (currentSection === "pending_topics") {
       result.pending_topics.push(line.replace(/^[*-]\s*/, ""));
     }
   }

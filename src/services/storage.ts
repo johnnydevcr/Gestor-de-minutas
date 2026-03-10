@@ -99,6 +99,41 @@ export const storageService = {
 
     return { id };
   },
+  updateMinute: (minuteData: any) => {
+    const minutes = get(STORAGE_KEYS.MINUTES);
+    const agreements = get(STORAGE_KEYS.AGREEMENTS);
+    
+    const id = minuteData.id;
+    const { agreements: minuteAgreements, ...minute } = minuteData;
+
+    const index = minutes.findIndex((m: any) => m.id === id);
+    if (index !== -1) {
+      minutes[index] = {
+        ...minutes[index],
+        ...minute,
+        updated_at: new Date().toISOString(),
+      };
+      save(STORAGE_KEYS.MINUTES, minutes);
+    }
+
+    // Replace agreements for this minute
+    const otherAgreements = agreements.filter((a: any) => a.minute_id !== id);
+    if (minuteAgreements && Array.isArray(minuteAgreements)) {
+      const newAgreements = minuteAgreements.map((ag: any) => ({
+        ...ag,
+        id: ag.id || Date.now() + Math.random(),
+        minute_id: id,
+        status: ag.status || "pendiente",
+        created_at: ag.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }));
+      save(STORAGE_KEYS.AGREEMENTS, [...otherAgreements, ...newAgreements]);
+    } else {
+      save(STORAGE_KEYS.AGREEMENTS, otherAgreements);
+    }
+
+    return { success: true };
+  },
 
   // Agreements
   getAgreements: () => {
@@ -135,6 +170,14 @@ export const storageService = {
   getLogo: () => {
     const settings = get(STORAGE_KEYS.SETTINGS, {});
     return settings.logo || null;
+  },
+  getHeader: () => {
+    const settings = get(STORAGE_KEYS.SETTINGS, {});
+    return settings.header || null;
+  },
+  getFooter: () => {
+    const settings = get(STORAGE_KEYS.SETTINGS, {});
+    return settings.footer || null;
   },
 
   // Designs
