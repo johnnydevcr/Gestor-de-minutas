@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import { FileText, Download, Edit, Search, Filter, FileDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { generateWordDocument } from "../services/word";
 import { generatePDF } from "../services/pdf";
 import { storageService } from "../services/storage";
+import { safeFormatDate } from "../services/parser";
 
 export default function History() {
   const [minutes, setMinutes] = useState<any[]>([]);
@@ -74,7 +73,7 @@ export default function History() {
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Historial de Minutas</h1>
           <p className="text-slate-500 mt-1">Consulta y descarga las minutas generadas anteriormente.</p>
         </div>
-        <Link to="/new" className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm shadow-sm flex items-center gap-2">
+        <Link to="/new" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm shadow-sm flex items-center gap-2">
           <FileText size={18} />
           Nueva Minuta
         </Link>
@@ -89,7 +88,7 @@ export default function History() {
           <select
             value={selectedClientId}
             onChange={(e) => setSelectedClientId(e.target.value)}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white min-w-[200px]"
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white min-w-[200px]"
           >
             <option value="">Todos los clientes</option>
             {clients.map((c) => (
@@ -130,7 +129,7 @@ export default function History() {
                     <td className="px-6 py-4 font-medium text-slate-900">{minute.minute_number}</td>
                     <td className="px-6 py-4 text-slate-600">{minute.client}</td>
                     <td className="px-6 py-4 text-slate-600">
-                      {minute.date ? format(new Date(minute.date), "dd MMM yyyy", { locale: es }) : '-'}
+                      {safeFormatDate(minute.date)}
                     </td>
                     <td className="px-6 py-4 text-slate-600">{minute.responsible}</td>
                     <td className="px-6 py-4 text-right space-x-2">
@@ -150,7 +149,7 @@ export default function History() {
                       </button>
                       <button 
                         onClick={() => handleDownload(minute.id)} 
-                        className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" 
+                        className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" 
                         title="Descargar Word"
                       >
                         <Download size={18} />

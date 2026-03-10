@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Users, Plus, Edit2, Trash2, RefreshCw, Search } from "lucide-react";
 import { storageService } from "../services/storage";
+import { safeFormatDate } from "../services/parser";
 
 interface Client {
   id: number;
@@ -89,7 +90,7 @@ export default function Clients() {
         </div>
         <button
           onClick={() => openModal()}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center gap-2"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
         >
           <Plus size={20} />
           Nuevo Cliente
@@ -105,7 +106,7 @@ export default function Clients() {
               placeholder="Buscar por nombre o código..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
             />
           </div>
           {loading && <RefreshCw className="animate-spin text-slate-400" size={20} />}
@@ -126,18 +127,18 @@ export default function Clients() {
                 filteredClients.map((client) => (
                   <tr key={client.id} className="hover:bg-slate-50 transition-colors group">
                     <td className="px-6 py-4">
-                      <span className="font-mono text-sm font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
+                      <span className="font-mono text-sm font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
                         {client.code}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm font-medium text-slate-700">{client.name}</td>
                     <td className="px-6 py-4 text-sm text-slate-500">
-                      {new Date(client.created_at).toLocaleDateString()}
+                      {safeFormatDate(client.created_at)}
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
                       <button
                         onClick={() => openModal(client)}
-                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         title="Editar"
                       >
                         <Edit2 size={18} />
@@ -183,7 +184,7 @@ export default function Clients() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full rounded-lg border border-slate-300 p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                  className="w-full rounded-lg border border-slate-300 p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   placeholder="Ej: Corporación ABC"
                 />
               </div>
@@ -194,7 +195,7 @@ export default function Clients() {
                   required
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                  className="w-full rounded-lg border border-slate-300 p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-mono"
+                  className="w-full rounded-lg border border-slate-300 p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono"
                   placeholder="Ej: ABC"
                 />
               </div>
@@ -208,7 +209,7 @@ export default function Clients() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
                 >
                   {editingClient ? "Actualizar" : "Crear Cliente"}
                 </button>

@@ -227,11 +227,11 @@ Reglas de Formato OBLIGATORIAS:
           Nueva Minuta
         </h1>
         <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
-          <span className={step >= 1 ? "text-indigo-600" : ""}>
+          <span className={step >= 1 ? "text-blue-600" : ""}>
             1. Información y Cliente
           </span>
           <span>&gt;</span>
-          <span className={step >= 2 ? "text-indigo-600" : ""}>
+          <span className={step >= 2 ? "text-blue-600" : ""}>
             2. Revisión
           </span>
         </div>
@@ -245,7 +245,7 @@ Reglas de Formato OBLIGATORIAS:
             </h2>
             <button
               onClick={() => setShowPromptGuide(true)}
-              className="text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center gap-1.5 transition-colors"
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1.5 transition-colors"
             >
               <Info size={16} />
               ¿Cómo generar este texto? (Prompt para Copilot)
@@ -261,7 +261,7 @@ Reglas de Formato OBLIGATORIAS:
               onChange={(e) =>
                 setFormData({ ...formData, clientId: e.target.value })
               }
-              className="w-full rounded-lg border-slate-300 border p-3 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full rounded-lg border-slate-300 border p-3 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Selecciona un cliente...</option>
               {clients.map((c) => (
@@ -288,7 +288,7 @@ Reglas de Formato OBLIGATORIAS:
                 </button>
                 <button
                   onClick={handlePasteFromCopilot}
-                  className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-semibold hover:bg-indigo-100 transition-colors flex items-center gap-1.5 border border-indigo-100"
+                  className="text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg font-semibold hover:bg-blue-100 transition-colors flex items-center gap-1.5 border border-blue-100"
                 >
                   <ClipboardList size={14} />
                   Pegar desde Copilot
@@ -302,7 +302,7 @@ Reglas de Formato OBLIGATORIAS:
               }
               rows={12}
               placeholder="Pega aquí la información estructurada (Fecha, Hora, Objetivo, Temas, etc...)"
-              className="w-full rounded-lg border-slate-300 border p-4 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
+              className="w-full rounded-lg border-slate-300 border p-4 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
             />
             <p className="text-xs text-slate-500 mt-2">
               Tip: Si el botón de pegar no funciona, usa <strong>Ctrl+V</strong> (o <strong>Cmd+V</strong>) directamente en el cuadro de texto.
@@ -313,7 +313,7 @@ Reglas de Formato OBLIGATORIAS:
             <button
               onClick={handleAnalyze}
               disabled={loading || !formData.transcript.trim()}
-              className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50"
             >
               {loading ? (
                 <RefreshCw className="animate-spin" size={20} />
@@ -379,7 +379,7 @@ Reglas de Formato OBLIGATORIAS:
                   onChange={(e) =>
                     setAiData({ ...aiData, minute_number: e.target.value })
                   }
-                  className="w-full rounded-lg border-slate-300 border p-2.5 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full rounded-lg border-slate-300 border p-2.5 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
               <div>
@@ -392,7 +392,7 @@ Reglas de Formato OBLIGATORIAS:
                   onChange={(e) =>
                     setAiData({ ...aiData, client: e.target.value })
                   }
-                  className="w-full rounded-lg border-slate-300 border p-2.5 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full rounded-lg border-slate-300 border p-2.5 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
               <div>
@@ -406,7 +406,7 @@ Reglas de Formato OBLIGATORIAS:
                     setAiData({ ...aiData, meeting_name: e.target.value })
                   }
                   placeholder="Ej: Revisión Semanal de Proyecto"
-                  className="w-full rounded-lg border-slate-300 border p-2.5 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full rounded-lg border-slate-300 border p-2.5 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
               <div>
@@ -490,7 +490,7 @@ Reglas de Formato OBLIGATORIAS:
                     onChange={(e) => setNewAttendee(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addAttendee()}
                     placeholder="Nombre..."
-                    className="flex-1 rounded-lg border-slate-300 border p-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                    className="flex-1 rounded-lg border-slate-300 border p-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   />
                   <button
                     onClick={addAttendee}
@@ -503,12 +503,12 @@ Reglas de Formato OBLIGATORIAS:
                   {(aiData.attendees || []).map((a: string) => (
                     <span
                       key={a}
-                      className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-sm flex items-center gap-1"
+                      className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center gap-1"
                     >
                       {a}{" "}
                       <button
                         onClick={() => removeAttendee(a)}
-                        className="hover:text-indigo-900"
+                        className="hover:text-blue-900"
                       >
                         <X size={14} />
                       </button>
@@ -527,7 +527,7 @@ Reglas de Formato OBLIGATORIAS:
                     onChange={(e) => setNewAbsentee(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addAbsentee()}
                     placeholder="Nombre..."
-                    className="flex-1 rounded-lg border-slate-300 border p-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                    className="flex-1 rounded-lg border-slate-300 border p-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   />
                   <button
                     onClick={addAbsentee}
@@ -620,7 +620,7 @@ Reglas de Formato OBLIGATORIAS:
                         newTopics[idx].title = e.target.value;
                         setAiData({ ...aiData, topics: newTopics });
                       }}
-                      className="w-full font-semibold bg-transparent border-b border-slate-300 focus:border-indigo-500 focus:ring-0 px-0 py-1"
+                      className="w-full font-semibold bg-transparent border-b border-slate-300 focus:border-blue-500 focus:ring-0 px-0 py-1"
                     />
                     <div className="grid grid-cols-1 gap-4">
                       <div>
@@ -776,7 +776,7 @@ Reglas de Formato OBLIGATORIAS:
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                <Info className="text-indigo-600" size={20} />
+                <Info className="text-blue-600" size={20} />
                 Prompt para Copilot / ChatGPT
               </h3>
               <button onClick={() => setShowPromptGuide(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
@@ -810,7 +810,7 @@ Reglas de Formato OBLIGATORIAS:
               </div>
             </div>
             <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
-              <button onClick={() => setShowPromptGuide(false)} className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+              <button onClick={() => setShowPromptGuide(false)} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
                 Entendido
               </button>
             </div>
@@ -833,32 +833,32 @@ Reglas de Formato OBLIGATORIAS:
                   <div className="flex justify-between items-start mb-8">
                     <h1 className="text-2xl font-bold text-slate-900">MINUTA DE REUNIÓN</h1>
                     <div className="text-right text-sm space-y-1">
-                      <p><span className="font-bold text-indigo-600">FECHA:</span> {formatDateForDisplay(aiData.date)}</p>
-                      <p><span className="font-bold text-indigo-600">HORA:</span> {aiData.start_time} - {aiData.end_time}</p>
-                      <p><span className="font-bold text-indigo-600">LUGAR:</span> {aiData.location}</p>
-                      <p><span className="font-bold text-indigo-600">Consecutivo:</span> {aiData.minute_number}</p>
+                      <p><span className="font-bold text-blue-600">FECHA:</span> {formatDateForDisplay(aiData.date)}</p>
+                      <p><span className="font-bold text-blue-600">HORA:</span> {aiData.start_time} - {aiData.end_time}</p>
+                      <p><span className="font-bold text-blue-600">LUGAR:</span> {aiData.location}</p>
+                      <p><span className="font-bold text-blue-600">Consecutivo:</span> {aiData.minute_number}</p>
                     </div>
                   </div>
 
                   <div className="space-y-4 mb-8">
-                    <p><span className="font-bold text-indigo-600">REUNIÓN / NOMBRE DEL PROYECTO:</span> {aiData.meeting_name || aiData.client}</p>
-                    <p><span className="font-bold text-indigo-600">ACTA PREPARADA POR:</span> {aiData.responsible}</p>
+                    <p><span className="font-bold text-blue-600">REUNIÓN / NOMBRE DEL PROYECTO:</span> {aiData.meeting_name || aiData.client}</p>
+                    <p><span className="font-bold text-blue-600">ACTA PREPARADA POR:</span> {aiData.responsible}</p>
                   </div>
 
                   <div className="mb-8">
-                    <h4 className="font-bold text-indigo-600 mb-2">OBJETIVO DE LA REUNIÓN:</h4>
+                    <h4 className="font-bold text-blue-600 mb-2">OBJETIVO DE LA REUNIÓN:</h4>
                     <p className="text-sm text-slate-700">{aiData.objective}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-8 mb-8">
                     <div>
-                      <h4 className="font-bold bg-indigo-600 text-white px-3 py-1 text-sm mb-2">ASISTENTES</h4>
+                      <h4 className="font-bold bg-blue-600 text-white px-3 py-1 text-sm mb-2">ASISTENTES</h4>
                       <ul className="text-sm list-disc list-inside text-slate-700">
                         {aiData.attendees.map((a: string) => <li key={a}>{a}</li>)}
                       </ul>
                     </div>
                     <div>
-                      <h4 className="font-bold bg-indigo-600 text-white px-3 py-1 text-sm mb-2">AUSENTES</h4>
+                      <h4 className="font-bold bg-blue-600 text-white px-3 py-1 text-sm mb-2">AUSENTES</h4>
                       <ul className="text-sm list-disc list-inside text-slate-700">
                         {aiData.absentees.map((a: string) => <li key={a}>{a}</li>)}
                       </ul>
@@ -868,9 +868,9 @@ Reglas de Formato OBLIGATORIAS:
                   <div className="mb-8">
                     <table className="w-full border-collapse text-sm">
                       <thead>
-                        <tr className="bg-indigo-600 text-white">
-                          <th className="border border-indigo-700 p-2 text-left w-1/3">Situación</th>
-                          <th className="border border-indigo-700 p-2 text-left">Comentarios/Anotaciones</th>
+                        <tr className="bg-blue-600 text-white">
+                          <th className="border border-blue-700 p-2 text-left w-1/3">Situación</th>
+                          <th className="border border-blue-700 p-2 text-left">Comentarios/Anotaciones</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -904,13 +904,13 @@ Reglas de Formato OBLIGATORIAS:
 
                   {aiData.agreements?.length > 0 && (
                     <div className="mb-8">
-                      <h4 className="font-bold text-indigo-600 mb-2">ACUERDOS:</h4>
+                      <h4 className="font-bold text-blue-600 mb-2">ACUERDOS:</h4>
                       <table className="w-full border-collapse text-sm">
                         <thead>
-                          <tr className="bg-indigo-600 text-white">
-                            <th className="border border-indigo-700 p-2 text-left">Acción</th>
-                            <th className="border border-indigo-700 p-2 text-left">Responsable</th>
-                            <th className="border border-indigo-700 p-2 text-left">Fecha</th>
+                          <tr className="bg-blue-600 text-white">
+                            <th className="border border-blue-700 p-2 text-left">Acción</th>
+                            <th className="border border-blue-700 p-2 text-left">Responsable</th>
+                            <th className="border border-blue-700 p-2 text-left">Fecha</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -928,7 +928,7 @@ Reglas de Formato OBLIGATORIAS:
 
                   {aiData.pending_topics?.length > 0 && (
                     <div>
-                      <h4 className="font-bold text-indigo-600 mb-2">TEMAS PENDIENTES:</h4>
+                      <h4 className="font-bold text-blue-600 mb-2">TEMAS PENDIENTES:</h4>
                       <ul className="text-sm list-disc list-inside text-slate-700">
                         {aiData.pending_topics.map((t: string, i: number) => <li key={i}>{t}</li>)}
                       </ul>
@@ -937,7 +937,7 @@ Reglas de Formato OBLIGATORIAS:
                 </div>
               </div>
               <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
-                <button onClick={() => setShowPreview(false)} className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                <button onClick={() => setShowPreview(false)} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
                   Cerrar Vista Previa
                 </button>
               </div>

@@ -1,6 +1,16 @@
+import { format, isValid } from "date-fns";
+import { es } from "date-fns/locale";
+
 /**
  * Service to parse structured text into meeting minute data.
  */
+
+export function safeFormatDate(dateStr: string | undefined | null, formatStr: string = "dd MMM yyyy"): string {
+  if (!dateStr) return "-";
+  const date = new Date(dateStr);
+  if (!isValid(date)) return dateStr; // Return original string if not a valid date
+  return format(date, formatStr, { locale: es });
+}
 
 export function validateMinuteText(text: string): { valid: boolean; error?: string } {
   const lowerText = text.toLowerCase();

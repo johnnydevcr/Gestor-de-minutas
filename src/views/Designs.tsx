@@ -33,7 +33,7 @@ export default function Designs() {
                 design.id === "classic"
                   ? "bg-slate-50 border-slate-200 text-slate-400"
                   : design.id === "modern"
-                    ? "bg-indigo-50 border-indigo-100 text-indigo-400"
+                    ? "bg-blue-50 border-blue-100 text-blue-400"
                     : "bg-emerald-50 border-emerald-100 text-emerald-400"
               }`}
             >

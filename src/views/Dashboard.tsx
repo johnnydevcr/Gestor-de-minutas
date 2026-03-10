@@ -23,7 +23,7 @@ export default function Dashboard() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
             <FileText size={24} />
           </div>
           <div>
@@ -46,7 +46,7 @@ export default function Dashboard() {
       <div className="mt-8">
         <h2 className="text-xl font-semibold text-slate-800 mb-4">Acciones Rápidas</h2>
         <div className="flex gap-4">
-          <Link to="/new" className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm">
+          <Link to="/new" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm">
             <FileText size={20} />
             Crear Nueva Minuta
           </Link>

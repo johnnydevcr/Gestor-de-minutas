@@ -15,11 +15,11 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col h-screen fixed left-0 top-0">
+    <aside className="w-64 bg-blue-950 text-slate-300 flex flex-col h-screen fixed left-0 top-0">
       <div className="p-6">
         <h1 className="text-xl font-bold text-white flex items-center gap-2">
-          <FileText className="text-indigo-500" />
-          AI Meeting
+          <FileText className="text-blue-400" />
+          Gestor Minutas
         </h1>
         <p className="text-xs text-slate-500 mt-1">Intelligence</p>
       </div>
@@ -34,8 +34,8 @@ export default function Sidebar() {
               className={clsx(
                 "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium",
                 isActive
-                  ? "bg-indigo-600 text-white"
-                  : "hover:bg-slate-800 hover:text-white"
+                  ? "bg-blue-800 text-white"
+                  : "hover:bg-blue-900/50 hover:text-white"
               )}
             >
               <Icon size={18} />
@@ -44,8 +44,8 @@ export default function Sidebar() {
           );
         })}
       </nav>
-      <div className="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
-        &copy; 2026 AI Meeting Intelligence
+      <div className="p-4 border-t border-blue-900 text-xs text-slate-500 text-center">
+        &copy; 2026 Gestor Minutas
       </div>
     </aside>
   );

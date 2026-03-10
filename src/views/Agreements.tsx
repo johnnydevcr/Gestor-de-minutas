@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import { CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { clsx } from "clsx";
 import { storageService } from "../services/storage";
+import { safeFormatDate } from "../services/parser";
 
 export default function Agreements() {
   const [agreements, setAgreements] = useState<any[]>([]);
@@ -33,7 +32,7 @@ export default function Agreements() {
               className={clsx(
                 "px-4 py-2 rounded-lg text-sm font-medium transition-colors border",
                 filter === f
-                  ? "bg-indigo-50 border-indigo-200 text-indigo-700"
+                  ? "bg-blue-50 border-blue-200 text-blue-700"
                   : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
               )}
             >
@@ -65,7 +64,7 @@ export default function Agreements() {
                   <td className="p-4 font-medium text-slate-900 max-w-xs truncate">{agreement.action}</td>
                   <td className="p-4 text-slate-600">{agreement.responsible}</td>
                   <td className="p-4 text-slate-600">
-                    {agreement.commitment_date ? format(new Date(agreement.commitment_date), "dd MMM yyyy", { locale: es }) : '-'}
+                    {safeFormatDate(agreement.commitment_date)}
                   </td>
                   <td className="p-4 text-slate-600">
                     <div className="text-sm font-medium text-slate-900">{agreement.minute_number}</div>
